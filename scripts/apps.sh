@@ -20,6 +20,17 @@ if ! command -v brew &> /dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     if [ $? -eq 0 ]; then
         echo "Homebrew installed successfully."
+        echo "Adding Homebrew to PATH..."
+        # Determine which shell is being used and source the appropriate profile
+        if [[ $SHELL == *"zsh"* ]]; then
+            source ~/.zprofile
+        elif [[ $SHELL == *"bash"* ]]; then
+            source ~/.bash_profile
+        else
+            echo "Unknown shell. Please restart your terminal manually to use Homebrew."
+            exit 1
+        fi
+        echo "Homebrew added to PATH successfully."
     else
         echo "Failed to install Homebrew."
         exit 1
@@ -40,7 +51,7 @@ fi
 
 # Upgrade any already-installed formulae.
 echo "Upgrading installed formulae..."
-brew upgrade --all
+brew upgrade
 if [ $? -eq 0 ]; then
     echo "Formulae upgraded successfully."
 else
