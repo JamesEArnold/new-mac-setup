@@ -17,7 +17,7 @@ fi
 echo "Checking if Homebrew is installed..."
 if ! command -v brew &> /dev/null; then
     echo "Homebrew not found. Installing Homebrew..."
-    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     if [ $? -eq 0 ]; then
         echo "Homebrew installed successfully."
     else
