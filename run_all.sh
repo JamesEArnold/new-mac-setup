@@ -8,3 +8,4 @@ find . -type f -name "*.sh" -exec chmod +x {} \;
 ./scripts/apps.sh
 ./scripts/terminal_defaults.sh
 ./scripts/nvm.sh
+./scripts/vs_code.sh
