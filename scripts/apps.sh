@@ -23,9 +23,15 @@ if ! command -v brew &> /dev/null; then
         echo "Adding Homebrew to PATH..."
         # Determine which shell is being used and source the appropriate profile
         if [[ $SHELL == *"zsh"* ]]; then
-            source ~/.zprofile
+          echo "Configuring Homebrew environment..."
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+          echo "Homebrew environment configured."
         elif [[ $SHELL == *"bash"* ]]; then
-            source ~/.bash_profile
+          echo "Configuring Homebrew environment..."
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.bash_profile
+          echo "Homebrew environment configured."
         else
             echo "Unknown shell. Please restart your terminal manually to use Homebrew."
             exit 1
