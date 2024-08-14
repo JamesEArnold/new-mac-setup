@@ -23,15 +23,15 @@ if ! command -v brew &> /dev/null; then
         echo "Adding Homebrew to PATH..."
         # Determine which shell is being used and source the appropriate profile
         if [[ $SHELL == *"zsh"* ]]; then
-          echo "Configuring Homebrew environment..."
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-          echo "Homebrew environment configured."
+            echo "Configuring Homebrew environment..."
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+            echo "Homebrew environment configured."
         elif [[ $SHELL == *"bash"* ]]; then
-          echo "Configuring Homebrew environment..."
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.bash_profile
-          echo "Homebrew environment configured."
+            echo "Configuring Homebrew environment..."
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.bash_profile
+            echo "Homebrew environment configured."
         else
             echo "Unknown shell. Please restart your terminal manually to use Homebrew."
             exit 1
@@ -167,6 +167,10 @@ for app in \
     echo "Adding $app to the Dock..."
     add_to_dock "$app"
 done
+
+# Restart the Dock to apply changes
+echo "Restarting the Dock..."
+killall Dock
 
 # Remove outdated versions from the cellar.
 echo "Cleaning up outdated versions..."
