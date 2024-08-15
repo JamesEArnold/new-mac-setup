@@ -45,3 +45,8 @@ ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 # Print the public key to the console
 echo "SSH key generated successfully. The public key is:"
 cat ~/.ssh/id_ed25519.pub
+
+# Provide the GitHub documentation link
+echo ""
+echo "Follow this link to add your SSH key to your GitHub account:"
+echo "https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account"
