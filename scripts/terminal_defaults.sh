@@ -75,6 +75,7 @@ install_starship() {
     # Add Starship initialization to ~/.zshrc if not already present
     if ! grep -q 'eval "$(starship init zsh)"' "$HOME/.zshrc"; then
         echo 'eval "$(starship init zsh)"' >> "$HOME/.zshrc"
+        starship preset nerd-font-symbols -o ~/.config/starship.toml
         echo "Starship.rs initialized in ~/.zshrc."
     else
         echo "Starship.rs is already initialized in ~/.zshrc."

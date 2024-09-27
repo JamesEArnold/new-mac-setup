@@ -125,6 +125,15 @@ else
     exit 1
 fi
 
+brew install --cask font-hack-nerd-font
+if [ $? -eq 0 ]; then
+    echo "Nerd Fonts installed successfully."
+    echo "Dont forget to update your terminal profile font to be a Nerd Font."
+else
+    echo "Failed to install NerdFonts."
+    exit 1
+fi
+
 # Function to add app to Dock
 add_to_dock() {
     APP_PATH="$1"

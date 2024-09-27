@@ -31,9 +31,33 @@ install_vscode_extension() {
   fi
 }
 
+# Function to add a setting to the VSCode settings file
+add_vscode_setting() {
+  local setting_key=$1
+  local setting_value=$2
+
+  # Path to VSCode settings file
+  VSCODE_SETTINGS="$HOME/Library/Application Support/Code/User/settings.json"
+
+  # Check if the settings file exists
+  if [ -f "$VSCODE_SETTINGS" ]; then
+    # Check if the setting already exists
+    if ! grep -q "\"$setting_key\": \"$setting_value\"" "$VSCODE_SETTINGS"; then
+      # Add the setting before the last closing brace
+      sed -i '' -e "\$s/}/,\n    \"$setting_key\": \"$setting_value\"\n}/" "$VSCODE_SETTINGS"
+      echo "Added '$setting_key' to VSCode settings."
+    else
+      echo "'$setting_key' is already set."
+    fi
+  else
+    echo "VSCode settings file not found."
+  fi
+}
+
 # Run the checks and installation
 check_vscode_installed
 
+# Install extensions
 install_vscode_extension dracula-theme.theme-dracula # Dracula Theme
 install_vscode_extension dbaeumer.vscode-eslint # Eslint
 install_vscode_extension dsznajder.es7-react-js-snippets # React Snippets
@@ -50,4 +74,7 @@ install_vscode_extension ms-playwright.playwright # Playwright runner
 install_vscode_extension prisma.prisma # Prisma intellisense
 install_vscode_extension sonarsource.sonarlint-vscode # Sonar Linting
 
-echo "All extensions installed successfully!"
+# Add desired settings
+add_vscode_setting "terminal.integrated.fontFamily" "FiraCode Nerd Font Mono"
+
+echo "All extensions installed successfully, and settings configured!"
