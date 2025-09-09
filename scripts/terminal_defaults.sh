@@ -1,154 +1,165 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# scripts/terminal_defaults.sh
+# Robust, idempotent terminal setup for macOS (Apple Silicon–safe)
+# - Ensures Oh My Zsh, Starship, Nerd Font, and popular zsh plugins
+# - Uses Homebrew casks for fonts (no manual ZIPs)
+# - Leaves existing configs intact; only appends when missing
 
-# Function to install Zsh
-install_zsh() {
-    echo "Installing Zsh..."
+set -euo pipefail
 
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        sudo apt update && sudo apt install zsh -y
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        brew install zsh
-    else
-        echo "Unsupported OS. Please install Zsh manually."
-        exit 1
-    fi
-}
+log() { printf '%s\n' "$*"; }
+have() { command -v "$1" >/dev/null 2>&1; }
 
-# Function to install Oh My Zsh
-install_oh_my_zsh() {
-    echo "Installing Oh My Zsh..."
+# --- Ensure Homebrew is available (in case this runs standalone) --------------
+if ! have brew; then
+  log "Homebrew not found. Please run apps.sh first or install Homebrew."
+  exit 1
+fi
+# Load brew env for this session (safe if already set)
+eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || true)"
 
-    # Install Oh My Zsh
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-}
+# --- Make sure the user's default shell is zsh (don't force, just hint) ------
+if [[ "${SHELL:-}" != "/bin/zsh" ]]; then
+  log "Note: Default shell is not zsh (current: ${SHELL:-unknown})."
+  log "You can switch with: chsh -s /bin/zsh"
+fi
 
-# Function to install Meslo Nerd Font
-install_meslo_nerd_font() {
-    echo "Installing Meslo Nerd Font..."
-
-    # Define the font URL
-    FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.2/Meslo.zip"
-
-    # Create a temporary directory for downloading the font
-    TEMP_DIR=$(mktemp -d)
-    cd "$TEMP_DIR" || exit
-
-    # Download the font zip file
-    curl -fLo Meslo.zip "$FONT_URL"
-
-    # Unzip the font
-    unzip Meslo.zip -d Meslo
-
-    # Create the fonts directory if it doesn't exist
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        mkdir -p ~/.local/share/fonts
-        mv Meslo/* ~/.local/share/fonts/
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        mkdir -p ~/Library/Fonts
-        mv Meslo/* ~/Library/Fonts/
-    else
-        echo "Unsupported OS. Please install Meslo Nerd Font manually."
-        exit 1
-    fi
-
-    # Clean up
-    cd ~ || exit
-    rm -rf "$TEMP_DIR"
-
-    # Refresh the font cache
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        fc-cache -fv
-    fi
-
-    echo "Meslo Nerd Font installed successfully."
-}
-
-# Function to install Starship.rs
-install_starship() {
-    echo "Installing Starship.rs..."
-
-    # Install Starship
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
-
-    echo "Starship.rs installed successfully."
-
-    # Add Starship initialization to ~/.zshrc if not already present
-    if ! grep -q 'eval "$(starship init zsh)"' "$HOME/.zshrc"; then
-        echo 'eval "$(starship init zsh)"' >> "$HOME/.zshrc"
-        starship preset nerd-font-symbols -o ~/.config/starship.toml
-        echo "Starship.rs initialized in ~/.zshrc."
-    else
-        echo "Starship.rs is already initialized in ~/.zshrc."
-    fi
-}
-
-# Function to install Zsh plugins
-install_zsh_plugins() {
-    echo "Installing Zsh plugins..."
-
-    # Ensure git plugin is added
-    if ! grep -q "plugins=.*git" "$HOME/.zshrc"; then
-        sed -i -e 's/plugins=(/plugins=(git /' "$HOME/.zshrc"
-        echo "Added git plugin to ~/.zshrc."
-    fi
-
-    # Clone zsh-syntax-highlighting plugin if not already installed
-    if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
-        echo "Installed zsh-syntax-highlighting plugin."
-    else
-        echo "zsh-syntax-highlighting is already installed."
-    fi
-
-    # Clone zsh-autosuggestions plugin if not already installed
-    if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
-        git clone https://github.com/zsh-users/zsh-autosuggestions "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
-        echo "Installed zsh-autosuggestions plugin."
-    else
-        echo "zsh-autosuggestions is already installed."
-    fi
-
-    # Add zsh-syntax-highlighting and zsh-autosuggestions to plugins array in ~/.zshrc
-    if ! grep -q "plugins=.*zsh-syntax-highlighting" "$HOME/.zshrc"; then
-        sed -i -e 's/plugins=(/plugins=(zsh-syntax-highlighting zsh-autosuggestions /' "$HOME/.zshrc"
-        echo "Added zsh-syntax-highlighting and zsh-autosuggestions plugins to ~/.zshrc."
-    fi
-}
-
-# Check if Zsh is installed
-if ! command -v zsh &> /dev/null; then
-    install_zsh
+# --- Oh My Zsh (idempotent) ---------------------------------------------------
+if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+  log "Installing Oh My Zsh..."
+  CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 else
-    echo "Zsh is already installed."
+  log "Oh My Zsh already installed."
 fi
 
-# Install Oh My Zsh if not already installed
-if [ -d "$HOME/.oh-my-zsh" ]; then
-    echo "Oh My Zsh is already installed."
+# --- Starship prompt via Homebrew (idempotent) --------------------------------
+if have starship; then
+  log "Starship already installed."
 else
-    install_oh_my_zsh
+  log "Installing Starship prompt..."
+  brew install starship || log "Warning: Failed to install Starship."
 fi
 
-# Install Meslo Nerd Font if not already installed
-if [[ "$OSTYPE" == "linux-gnu"* && ! -d "~/.local/share/fonts/Meslo" ]] || [[ "$OSTYPE" == "darwin"* && ! -d "~/Library/Fonts/Meslo" ]]; then
-    install_meslo_nerd_font
+# --- Fonts tap (idempotent) ---------------------------------------------------
+if brew tap | grep -q '^homebrew/cask-fonts$'; then
+  log "homebrew/cask-fonts already tapped."
 else
-    echo "Meslo Nerd Font is already installed."
+  brew tap homebrew/cask-fonts || true
 fi
 
-# Install Starship.rs if not already installed
-if ! command -v starship &> /dev/null; then
-    install_starship
+# --- Meslo Nerd Font via Homebrew cask (idempotent) ---------------------------
+if brew list --cask font-meslo-lg-nerd-font >/dev/null 2>&1; then
+  log "Meslo Nerd Font already installed."
 else
-    echo "Starship.rs is already installed."
+  log "Installing Meslo Nerd Font..."
+  if brew install --cask font-meslo-lg-nerd-font; then
+    log "Meslo Nerd Font installed."
+  else
+    log "Warning: Failed to install Meslo Nerd Font."
+  fi
 fi
 
-# Install Zsh plugins
-install_zsh_plugins
+# --- Starship config with Nerd Font symbols (create if missing) ---------------
+mkdir -p "$HOME/.config"
+STAR_CFG="$HOME/.config/starship.toml"
+if [[ ! -f "$STAR_CFG" ]]; then
+  if have starship; then
+    log "Creating Starship config with Nerd Font symbols preset..."
+    if ! starship preset nerd-font-symbols -o "$STAR_CFG"; then
+      log "Preset generation failed; writing a minimal config."
+      cat > "$STAR_CFG" <<'EOF'
+# Minimal Starship config using Nerd Font symbols
+format = """
+$all\
+"""
 
-# Change default shell to Zsh
-if [ "$SHELL" != "$(which zsh)" ]; then
-    echo "Changing default shell to Zsh..."
-    chsh -s "$(which zsh)"
-    echo "Please log out and log back in to apply the new shell."
+[character]
+success_symbol = "➜ "
+error_symbol = "✗ "
+
+[git_branch]
+symbol = " "
+
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+style = "bold yellow"
+EOF
+    fi
+  else
+    log "Starship not available to generate preset; skipping config."
+  fi
+else
+  log "Starship config exists at $STAR_CFG — leaving it unchanged."
 fi
+
+# --- Ensure Starship initializes in zsh ---------------------------------------
+ZSHRC="$HOME/.zshrc"
+if ! grep -q 'eval "\$\(starship init zsh\)"' "$ZSHRC" 2>/dev/null; then
+  log "Adding Starship init to ~/.zshrc"
+  {
+    echo ''
+    echo '# Starship prompt'
+    echo 'eval "$(starship init zsh)"'
+  } >> "$ZSHRC"
+else
+  log "Starship init already present in ~/.zshrc"
+fi
+
+# --- zsh plugins: zsh-syntax-highlighting, zsh-autosuggestions ----------------
+ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+# zsh-syntax-highlighting
+if [[ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/.git" ]]; then
+  log "Updating zsh-syntax-highlighting..."
+  git -C "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" fetch --quiet || true
+  git -C "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" pull --ff-only --quiet || true
+elif [[ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]]; then
+  log "zsh-syntax-highlighting already present."
+else
+  log "Installing zsh-syntax-highlighting..."
+  git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+fi
+
+# zsh-autosuggestions
+if [[ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions/.git" ]]; then
+  log "Updating zsh-autosuggestions..."
+  git -C "$ZSH_CUSTOM/plugins/zsh-autosuggestions" fetch --quiet || true
+  git -C "$ZSH_CUSTOM/plugins/zsh-autosuggestions" pull --ff-only --quiet || true
+elif [[ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]]; then
+  log "zsh-autosuggestions already present."
+else
+  log "Installing zsh-autosuggestions..."
+  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+fi
+
+# Ensure plugins are enabled in ~/.zshrc (append if missing)
+ensure_plugin_in_zshrc() {
+  local plugin="$1"
+  if grep -E '^\s*plugins=\(' "$ZSHRC" >/dev/null 2>&1; then
+    if grep -E "^\s*plugins=\(.*\b${plugin}\b.*\)" "$ZSHRC" >/dev/null 2>&1; then
+      return 0
+    fi
+    # Add plugin to existing plugins=(...) line
+    log "Enabling $plugin in ~/.zshrc plugins list."
+    perl -0777 -pe 's/^\s*plugins=\(([^)]*)\)/"plugins=(".$1." '"$plugin"')"/se' -i "$ZSHRC"
+  else
+    # No plugins line found; create one
+    log "Creating plugins list with $plugin in ~/.zshrc."
+    {
+      echo ''
+      echo 'plugins=('"$plugin"')'
+    } >> "$ZSHRC"
+  fi
+}
+
+ensure_plugin_in_zshrc "git"
+ensure_plugin_in_zshrc "zsh-syntax-highlighting"
+ensure_plugin_in_zshrc "zsh-autosuggestions"
+
+# --- Helpful hints ------------------------------------------------------------
+log "If icons look wrong, set your terminal font to a Nerd Font:"
+log "  iTerm2 → Preferences → Profiles → Text → Font → MesloLGS Nerd Font (Mono)"
+log "  Apple Terminal → Preferences → Profiles → Text → Change… → MesloLGS Nerd Font"
+log "Reload your shell when done:  exec zsh -l"
+
+log "terminal_defaults.sh completed."

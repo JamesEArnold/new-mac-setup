@@ -1,52 +1,67 @@
-#!/bin/bash
+# scripts/github.sh
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Ask for the administrator password upfront.
 echo "Requesting administrator password..."
-sudo -v
-if [ $? -eq 0 ]; then
-    echo "Administrator password accepted."
-else
-    echo "Failed to obtain administrator privileges."
-    exit 1
-fi
+sudo -v || { echo "Failed to obtain administrator privileges."; exit 1; }
 
-# Prompt the user for their email
-read -p "Enter your github account email for the SSH key: " EMAIL
+read -rp "Enter your GitHub account email for the SSH key: " EMAIL
+EMAIL=${EMAIL:-}
 
-# Check if the email is empty
-if [ -z "$EMAIL" ]; then
-  echo "Email is required. Exiting."
+if [[ -z "$EMAIL" ]]; then
+  echo "No email provided. Exiting."
   exit 1
 fi
 
-# Generate SSH key
-ssh-keygen -t ed25519 -C "$EMAIL" -f ~/.ssh/id_ed25519
+SSH_DIR="$HOME/.ssh"
+mkdir -p "$SSH_DIR"
+chmod 700 "$SSH_DIR"
 
-# Start the ssh-agent
-eval "$(ssh-agent -s)"
+KEY_PATH="$SSH_DIR/id_ed25519"
 
-# Create or modify the SSH config file
-if [ ! -f ~/.ssh/config ]; then
-  touch ~/.ssh/config
+if [[ -f "$KEY_PATH" ]]; then
+  echo "SSH key already exists at $KEY_PATH (leaving it in place)."
+else
+  echo "Generating new SSH key (ed25519)..."
+  ssh-keygen -t ed25519 -C "$EMAIL" -f "$KEY_PATH" -N ""
 fi
 
-# Add configuration to ssh config file
-cat <<EOT >> ~/.ssh/config
+# Start/ensure ssh-agent
+if ! pgrep -x "ssh-agent" >/dev/null; then
+  eval "$(ssh-agent -s)"
+fi
+
+# macOS keychain integration
+if [[ -f "$HOME/Library/LaunchAgents/org.openbsd.ssh-agent.plist" ]]; then
+  launchctl load -w "$HOME/Library/LaunchAgents/org.openbsd.ssh-agent.plist" || true
+fi
+
+# Add key to agent with macOS keychain helpers
+if [[ -x /usr/bin/ssh-add ]]; then
+  /usr/bin/ssh-add --apple-use-keychain "$KEY_PATH" || ssh-add "$KEY_PATH" || true
+fi
+
+# Configure to use keychain & GitHub host
+SSH_CONFIG="$SSH_DIR/config"
+touch "$SSH_CONFIG"
+chmod 600 "$SSH_CONFIG"
+if ! grep -q "Host github.com" "$SSH_CONFIG"; then
+  cat >> "$SSH_CONFIG" <<'EOF'
 
 Host github.com
   AddKeysToAgent yes
   UseKeychain yes
   IdentityFile ~/.ssh/id_ed25519
-EOT
+EOF
+fi
 
-# Add the SSH key to the ssh-agent and store the passphrase in the keychain
-ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 
-# Print the public key to the console
-echo "SSH key generated successfully. The public key is:"
-cat ~/.ssh/id_ed25519.pub
-
-# Provide the GitHub documentation link
+echo
+echo "Public key (add this to GitHub -> Settings -> SSH and GPG keys):"
+echo "----------------------------------------------------------------"
+cat "$KEY_PATH.pub"
+echo "----------------------------------------------------------------"
 echo ""
 echo "Follow this link to add your SSH key to your GitHub account:"
 echo "https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account"
+echo "You can test with: ssh -T git@github.com"
