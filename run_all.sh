@@ -23,6 +23,7 @@ confirm "Apply macOS defaults now?" && ./scripts/mac_defaults.sh || echo "Skippe
 confirm "Install apps & brew formulae?" && ./scripts/apps.sh || echo "Skipped apps."
 confirm "Install non-brew CLI tools (uv, aws, gcloud)?" && ./scripts/cli_tools.sh || echo "Skipped CLI tools."
 confirm "Set up terminal defaults?" && ./scripts/terminal_defaults.sh || echo "Skipped terminal."
+confirm "Configure iTerm2 (custom prefs folder + DynamicProfiles)?" && ./scripts/iterm.sh || echo "Skipped iTerm2."
 confirm "Install nvm & Node?" && ./scripts/nvm.sh || echo "Skipped nvm."
 confirm "Configure VS Code?" && ./scripts/vs_code.sh || echo "Skipped VS Code."
 confirm "Generate GitHub SSH key?" && ./scripts/github.sh || echo "Skipped GitHub SSH setup."
