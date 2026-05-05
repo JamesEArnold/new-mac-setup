@@ -83,7 +83,7 @@ brew install coreutils && echo "GNU core utilities installed successfully."
 
 GNUBIN="$(brew --prefix coreutils)/libexec/gnubin"
 if [[ -d "$GNUBIN" ]]; then
-  if ! echo "$PATH" | grep -q "$GNUBIN"; then
+  if ! grep -q 'coreutils/libexec/gnubin' "$HOME/.zprofile" 2>/dev/null; then
     echo "Adding coreutils gnubin to PATH via ~/.zprofile"
     echo 'export PATH="'"$GNUBIN"':$PATH"' >> ~/.zprofile
   fi
@@ -115,16 +115,28 @@ fi
 CASK_CATALOG=(
   "iterm2|iTerm|/Applications/iTerm.app"
   "visual-studio-code|Visual Studio Code|/Applications/Visual Studio Code.app"
-  "beekeeper-studio|Beekeeper Studio|/Applications/Beekeeper Studio.app"
   "google-chrome|Google Chrome|/Applications/Google Chrome.app"
   "firefox|Firefox|/Applications/Firefox.app"
   "slack|Slack|/Applications/Slack.app"
   "postman|Postman|/Applications/Postman.app"
-  "notion|Notion|/Applications/Notion.app"
-  "figma|Figma|/Applications/Figma.app"
   "1password|1Password|/Applications/1Password.app"
-  "docker|Docker Desktop|/Applications/Docker.app"
+  "chatgpt|ChatGPT|/Applications/ChatGPT.app"
+  "claude|Claude Desktop|/Applications/Claude.app"
+  "codex|Codex|/Applications/Codex.app"
+  "dbeaver-community|DBeaver|/Applications/DBeaver.app"
+  "obsidian|Obsidian|/Applications/Obsidian.app"
+  "opencode-desktop|OpenCode|/Applications/OpenCode.app"
+  "notunes|noTunes|"
+  "stats|Stats|"
   "claude-code|Claude Code (CLI)|"
+)
+
+# Brew formulae (CLI-only, no Dock entry)
+FORMULA_CATALOG=(
+  "tree|tree (directory listing)"
+  "terminal-notifier|terminal-notifier (macOS notifications)"
+  "pulumi/tap/pulumi|Pulumi (IaC)"
+  "anomalyco/tap/opencode|OpenCode CLI"
 )
 
 # ---- Helper to fetch value from token=>value arrays ----
@@ -191,14 +203,26 @@ else
   echo "No additional applications selected for installation."
 fi
 
-# Optional Docker installs
-if prompt_yes "Install Docker (CLI) now?"; then
-  brew install docker && echo "Docker installed successfully." || echo "Failed to install Docker."
-fi
-if prompt_yes "Install docker-machine?"; then
-  # On modern macOS, docker-machine is a more realistic legacy tool than boot2docker.
-  brew install docker-machine && echo "docker-machine installed successfully." || echo "Failed to install docker-machine."
-fi
+# Note: Docker Desktop should be installed directly from https://docker.com
+# (brew cask installs have caused issues with Docker functionality)
+
+# ---- Install brew formulae (CLI tools) ----
+echo
+echo "Checking brew formulae (CLI tools)..."
+for entry in "${FORMULA_CATALOG[@]}"; do
+  IFS='|' read -r token display <<<"$entry"
+  if brew list "$token" >/dev/null 2>&1; then
+    echo "✓ $display already installed."
+  else
+    if prompt_yes "Install $display?"; then
+      if brew install "$token"; then
+        echo "$display installed successfully."
+      else
+        echo "Failed to install $display."
+      fi
+    fi
+  fi
+done
 
 # Nerd Font
 if $INSTALL_FONT; then
@@ -251,6 +275,12 @@ if ((${#INSTALLED_TOKENS[@]})); then
       add_to_dock "$app_path"
     fi
   done
+  # Docker Desktop is installed manually (not via brew) — pin to Dock if present
+  if [[ -d "/Applications/Docker.app" ]]; then
+    echo "Adding Docker Desktop to the Dock..."
+    add_to_dock "/Applications/Docker.app"
+  fi
+
   echo "Restarting the Dock..."
   killall Dock || true
 fi

@@ -40,14 +40,8 @@ else
   brew install starship || log "Warning: Failed to install Starship."
 fi
 
-# --- Fonts tap (idempotent) ---------------------------------------------------
-if brew tap | grep -q '^homebrew/cask-fonts$'; then
-  log "homebrew/cask-fonts already tapped."
-else
-  brew tap homebrew/cask-fonts || true
-fi
-
 # --- Meslo Nerd Font via Homebrew cask (idempotent) ---------------------------
+# (homebrew/cask-fonts was deprecated in 2024; fonts now ship from homebrew-cask)
 if brew list --cask font-meslo-lg-nerd-font >/dev/null 2>&1; then
   log "Meslo Nerd Font already installed."
 else
@@ -155,6 +149,63 @@ ensure_plugin_in_zshrc() {
 ensure_plugin_in_zshrc "git"
 ensure_plugin_in_zshrc "zsh-syntax-highlighting"
 ensure_plugin_in_zshrc "zsh-autosuggestions"
+
+# --- Additional PATH entries (idempotent) -------------------------------------
+if ! grep -qF '$HOME/.local/bin' "$ZSHRC" 2>/dev/null; then
+  log "Adding \$HOME/.local/bin to PATH in ~/.zshrc"
+  {
+    echo ''
+    echo '# Local binaries'
+    echo 'export PATH="$HOME/.local/bin:$PATH"'
+  } >> "$ZSHRC"
+else
+  log "\$HOME/.local/bin PATH already present in ~/.zshrc"
+fi
+
+if ! grep -qF 'Python.framework' "$ZSHRC" 2>/dev/null; then
+  log "Adding Python 3.12 framework to PATH in ~/.zshrc"
+  {
+    echo ''
+    echo '# Python 3.12'
+    echo 'export PATH="/Library/Frameworks/Python.framework/Versions/3.12/bin:$PATH"'
+  } >> "$ZSHRC"
+else
+  log "Python framework PATH already present in ~/.zshrc"
+fi
+
+# --- AWS ECR login alias (idempotent) ----------------------------------------
+if ! grep -qF 'ecr-login' "$ZSHRC" 2>/dev/null; then
+  log "Adding ecr-login alias to ~/.zshrc"
+  {
+    echo ''
+    echo '# AWS ECR login alias'
+    echo "alias ecr-login='aws sso login --profile sso-registry && aws ecr get-login-password --region us-east-2 --profile sso-registry | docker login --username AWS --password-stdin 559050250739.dkr.ecr.us-east-2.amazonaws.com'"
+  } >> "$ZSHRC"
+else
+  log "ecr-login alias already present in ~/.zshrc"
+fi
+
+# --- Git worktree management functions (install & source) ---------------------
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+GWT_SRC="$SCRIPT_DIR/../configs/gwt.zsh"
+GWT_DEST="$HOME/.config/zsh/gwt.zsh"
+if [[ -f "$GWT_SRC" ]]; then
+  mkdir -p "$HOME/.config/zsh"
+  cp "$GWT_SRC" "$GWT_DEST"
+  log "Installed gwt.zsh to $GWT_DEST"
+  if ! grep -qF 'gwt.zsh' "$ZSHRC" 2>/dev/null; then
+    log "Adding gwt.zsh source to ~/.zshrc"
+    {
+      echo ''
+      echo '# Git worktree management functions'
+      echo '[ -f "$HOME/.config/zsh/gwt.zsh" ] && source "$HOME/.config/zsh/gwt.zsh"'
+    } >> "$ZSHRC"
+  else
+    log "gwt.zsh source already present in ~/.zshrc"
+  fi
+else
+  log "Warning: configs/gwt.zsh not found at $GWT_SRC — skipping gwt functions."
+fi
 
 # --- Helpful hints ------------------------------------------------------------
 log "If icons look wrong, set your terminal font to a Nerd Font:"

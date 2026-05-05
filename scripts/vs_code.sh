@@ -106,6 +106,7 @@ REACT_EXTENSIONS=(
 DEV_TOOLS_EXTENSIONS=(
   "ms-azuretools.vscode-docker|Docker Support"
   "ms-python.python|Python Language Support"
+  "ms-python.debugpy|Python Debugger (debugpy)"
   "wayou.vscode-todo-highlight|TODO Highlight"
   "streetsidesoftware.code-spell-checker|Code Spell Checker"
   "wix.vscode-import-cost|Import Cost Analyzer"
@@ -113,6 +114,13 @@ DEV_TOOLS_EXTENSIONS=(
   "ms-playwright.playwright|Playwright Test Runner"
   "prisma.prisma|Prisma ORM Support"
   "sonarsource.sonarlint-vscode|SonarLint (Code Quality)"
+  "cweijan.vscode-office|Office Viewer (Excel/CSV/Word)"
+  "repreng.csv|CSV Editor"
+)
+
+AI_EXTENSIONS=(
+  "anthropic.claude-code|Claude Code"
+  "openai.chatgpt|ChatGPT"
 )
 
 # ---- Arrays to track installation state ----
@@ -196,10 +204,11 @@ echo
 echo "Checking installed VSCode extensions and selecting what to install..."
 
 check_and_select_category "Core Development Extensions" CORE_EXTENSIONS
-check_and_select_category "Git & Version Control Extensions" GIT_EXTENSIONS  
+check_and_select_category "Git & Version Control Extensions" GIT_EXTENSIONS
 check_and_select_category "Theme & UI Extensions" THEME_EXTENSIONS
 check_and_select_category "React & Frontend Extensions" REACT_EXTENSIONS
 check_and_select_category "Development Tools Extensions" DEV_TOOLS_EXTENSIONS
+check_and_select_category "AI Extensions" AI_EXTENSIONS
 
 # ---- Install selected extensions ----
 INSTALLED_EXTENSIONS=("${ALREADY_INSTALLED[@]}")

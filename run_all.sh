@@ -20,7 +20,8 @@ confirm() {
 echo "This setup will make system changes and install developer tools."
 
 confirm "Apply macOS defaults now?" && ./scripts/mac_defaults.sh || echo "Skipped macOS defaults."
-confirm "Install apps & CLI tooling?" && ./scripts/apps.sh || echo "Skipped apps."
+confirm "Install apps & brew formulae?" && ./scripts/apps.sh || echo "Skipped apps."
+confirm "Install non-brew CLI tools (uv, aws, gcloud)?" && ./scripts/cli_tools.sh || echo "Skipped CLI tools."
 confirm "Set up terminal defaults?" && ./scripts/terminal_defaults.sh || echo "Skipped terminal."
 confirm "Install nvm & Node?" && ./scripts/nvm.sh || echo "Skipped nvm."
 confirm "Configure VS Code?" && ./scripts/vs_code.sh || echo "Skipped VS Code."
